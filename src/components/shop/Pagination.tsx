@@ -14,18 +14,21 @@ export function Pagination({
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
-    <nav className="mt-10 flex items-center justify-center gap-2">
+    <nav aria-label="Paginación de resultados" className="mt-10 flex items-center justify-center gap-2">
       <Link
         href={`/tienda?page=${Math.max(1, currentPage - 1)}`}
-        className="rounded-full px-3 py-1 text-dark/60 hover:bg-dark/5 aria-disabled:pointer-events-none aria-disabled:opacity-30"
+        aria-label="Página anterior"
         aria-disabled={currentPage === 1}
+        className="rounded-full px-3 py-1 text-dark/60 hover:bg-dark/5 aria-disabled:pointer-events-none aria-disabled:opacity-30"
       >
-        {"<"}
+        <span aria-hidden="true">{"<"}</span>
       </Link>
       {pages.map((page) => (
         <Link
           key={page}
           href={`/tienda?page=${page}`}
+          aria-label={`Página ${page}`}
+          aria-current={page === currentPage ? "page" : undefined}
           className={`h-9 w-9 rounded-full text-center leading-9 ${
             page === currentPage ? "bg-orange text-dark font-semibold" : "hover:bg-dark/5"
           }`}
@@ -35,10 +38,11 @@ export function Pagination({
       ))}
       <Link
         href={`/tienda?page=${Math.min(totalPages, currentPage + 1)}`}
-        className="rounded-full px-3 py-1 text-dark/60 hover:bg-dark/5 aria-disabled:pointer-events-none aria-disabled:opacity-30"
+        aria-label="Página siguiente"
         aria-disabled={currentPage === totalPages}
+        className="rounded-full px-3 py-1 text-dark/60 hover:bg-dark/5 aria-disabled:pointer-events-none aria-disabled:opacity-30"
       >
-        {">"}
+        <span aria-hidden="true">{">"}</span>
       </Link>
     </nav>
   );

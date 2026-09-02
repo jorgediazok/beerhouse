@@ -49,7 +49,11 @@ export function Contacto() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <label htmlFor="contact-name" className="sr-only">
+            Nombre
+          </label>
           <input
+            id="contact-name"
             type="text"
             required
             placeholder="Nombre"
@@ -57,7 +61,11 @@ export function Contacto() {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="rounded-lg border border-dark/10 bg-white px-4 py-3 outline-none focus:border-orange"
           />
+          <label htmlFor="contact-email" className="sr-only">
+            Email
+          </label>
           <input
+            id="contact-email"
             type="email"
             required
             placeholder="Email"
@@ -65,7 +73,11 @@ export function Contacto() {
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             className="rounded-lg border border-dark/10 bg-white px-4 py-3 outline-none focus:border-orange"
           />
+          <label htmlFor="contact-message" className="sr-only">
+            Mensaje
+          </label>
           <textarea
+            id="contact-message"
             required
             rows={4}
             placeholder="Mensaje"

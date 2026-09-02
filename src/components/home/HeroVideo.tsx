@@ -36,6 +36,8 @@ export function HeroVideo() {
           playsInline
           preload="auto"
           poster={clip.poster}
+          aria-hidden="true"
+          tabIndex={-1}
           onEnded={() => setCurrent((c) => (c + 1) % clips.length)}
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
             i === current ? "opacity-100" : "opacity-0"

@@ -32,7 +32,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-dark text-cream shadow-md">
+    <nav aria-label="Principal" className="sticky top-0 z-50 bg-dark text-cream shadow-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2" onClick={closeMenu}>
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-gold to-orange text-dark">
@@ -46,12 +46,15 @@ export function Navbar() {
         <button
           className="md:hidden"
           onClick={() => setMenuOpen((open) => !open)}
-          aria-label="Abrir menú"
+          aria-expanded={menuOpen}
+          aria-controls="primary-menu"
+          aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
         >
-          {menuOpen ? <X /> : <Menu />}
+          {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
         </button>
 
         <ul
+          id="primary-menu"
           className={`${
             menuOpen ? "flex" : "hidden"
           } absolute top-full left-0 w-full flex-col gap-4 bg-dark px-6 py-4 md:static md:flex md:w-auto md:flex-row md:items-center md:gap-8 md:bg-transparent md:px-0 md:py-0`}
@@ -88,7 +91,7 @@ export function Navbar() {
               onClick={closeMenu}
               className="flex items-center gap-1 text-sm font-medium tracking-wide uppercase hover:text-orange"
             >
-              Tienda <Beer size={16} />
+              Tienda <Beer size={16} aria-hidden="true" />
             </Link>
           </li>
           <li>
@@ -110,10 +113,22 @@ export function Navbar() {
             )}
           </li>
           <li>
-            <Link href="/cart" onClick={closeMenu} className="relative flex items-center">
-              <ShoppingCart />
+            <Link
+              href="/cart"
+              onClick={closeMenu}
+              className="relative flex items-center"
+              aria-label={
+                totalItems > 0
+                  ? `Carrito de compras, ${totalItems} ${totalItems === 1 ? "artículo" : "artículos"}`
+                  : "Carrito de compras, vacío"
+              }
+            >
+              <ShoppingCart aria-hidden="true" />
               {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange text-xs font-bold text-dark">
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange text-xs font-bold text-dark"
+                >
                   {totalItems}
                 </span>
               )}

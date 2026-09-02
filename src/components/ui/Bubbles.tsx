@@ -11,7 +11,10 @@ const bubbles = [
 
 export function Bubbles({ className = "" }: { className?: string }) {
   return (
-    <div className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}>
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
+    >
       {bubbles.map((bubble, i) => (
         <span
           key={i}

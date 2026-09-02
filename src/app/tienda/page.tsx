@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { getAllBeers } from "@/lib/contentful";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Pagination } from "@/components/shop/Pagination";
 
 const BEERS_PER_PAGE = 8;
+
+export const metadata: Metadata = {
+  title: "Tienda",
+  description:
+    "Explorá nuestro catálogo completo de cervezas importadas y artesanales, con envíos a domicilio en 24 horas.",
+};
 
 export default async function TiendaPage({
   searchParams,
