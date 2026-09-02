@@ -2,6 +2,7 @@
 
 import { Minus, Plus, Trash2 } from "lucide-react";
 import type { CartItem } from "@/types/cart";
+import { productImageSrc } from "@/lib/images";
 import { useCartStore } from "@/store/cart-store";
 import { ProductImage } from "@/components/ui/ProductImage";
 
@@ -13,15 +14,13 @@ export function CartItemRow({ entry }: { entry: CartItem }) {
   return (
     <div className="flex items-center gap-4 rounded-xl bg-white p-4 shadow-sm">
       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-cream">
-        {entry.item.imageUrl && (
-          <ProductImage
-            src={entry.item.imageUrl}
-            alt={entry.item.name}
-            fill
-            sizes="80px"
-            className="object-contain p-2"
-          />
-        )}
+        <ProductImage
+          src={productImageSrc(entry.item.id)}
+          alt={entry.item.name}
+          fill
+          sizes="80px"
+          className="object-contain p-2"
+        />
       </div>
       <div className="flex-1">
         <p className="font-semibold">{entry.item.name}</p>

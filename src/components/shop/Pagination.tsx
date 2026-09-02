@@ -3,20 +3,24 @@ import Link from "next/link";
 export function Pagination({
   currentPage,
   totalPages,
+  categoria,
 }: {
   currentPage: number;
   totalPages: number;
+  categoria?: string;
 }) {
   if (totalPages <= 1) {
     return null;
   }
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const hrefFor = (page: number) =>
+    categoria ? `/tienda?page=${page}&categoria=${categoria}` : `/tienda?page=${page}`;
 
   return (
     <nav aria-label="Paginación de resultados" className="mt-10 flex items-center justify-center gap-2">
       <Link
-        href={`/tienda?page=${Math.max(1, currentPage - 1)}`}
+        href={hrefFor(Math.max(1, currentPage - 1))}
         aria-label="Página anterior"
         aria-disabled={currentPage === 1}
         className="rounded-full px-3 py-1 text-dark/60 hover:bg-dark/5 aria-disabled:pointer-events-none aria-disabled:opacity-30"
@@ -26,7 +30,7 @@ export function Pagination({
       {pages.map((page) => (
         <Link
           key={page}
-          href={`/tienda?page=${page}`}
+          href={hrefFor(page)}
           aria-label={`Página ${page}`}
           aria-current={page === currentPage ? "page" : undefined}
           className={`h-9 w-9 rounded-full text-center leading-9 ${
@@ -37,7 +41,7 @@ export function Pagination({
         </Link>
       ))}
       <Link
-        href={`/tienda?page=${Math.min(totalPages, currentPage + 1)}`}
+        href={hrefFor(Math.min(totalPages, currentPage + 1))}
         aria-label="Página siguiente"
         aria-disabled={currentPage === totalPages}
         className="rounded-full px-3 py-1 text-dark/60 hover:bg-dark/5 aria-disabled:pointer-events-none aria-disabled:opacity-30"

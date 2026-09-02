@@ -1,11 +1,9 @@
 import Link from "next/link";
 import type { Beer } from "@/types/beer";
 import type { OfertaOverride } from "@/lib/ofertas";
+import { formatPrice } from "@/lib/format";
+import { productImageSrc } from "@/lib/images";
 import { ProductImage } from "@/components/ui/ProductImage";
-
-const priceFormatter = new Intl.NumberFormat("es-CL", {
-  maximumFractionDigits: 0,
-});
 
 export function OfertaCard({
   beer,
@@ -28,7 +26,7 @@ export function OfertaCard({
           -{oferta.discountPercent}%
         </span>
         <ProductImage
-          src={oferta.cutoutSrc}
+          src={productImageSrc(beer.id)}
           alt={beer.name}
           fill
           sizes="224px"
@@ -36,13 +34,13 @@ export function OfertaCard({
         />
       </div>
       <div className="flex flex-1 flex-col gap-1 p-4">
-        <h3 className="font-semibold">{beer.name}</h3>
+        <h3 className="line-clamp-1 font-semibold">{beer.name}</h3>
         <div className="flex items-baseline gap-2">
           <span className="font-bold text-orange">
-            $ {priceFormatter.format(beer.price)}
+            {formatPrice(beer.price)}
           </span>
           <span className="text-xs text-dark/40 line-through">
-            $ {priceFormatter.format(originalPrice)}
+            {formatPrice(originalPrice)}
           </span>
         </div>
         <p className="line-clamp-2 text-sm text-dark/60">{beer.description}</p>
