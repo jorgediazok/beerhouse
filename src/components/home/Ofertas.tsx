@@ -1,8 +1,12 @@
 import type { Beer } from "@/types/beer";
-import { OfertaCard } from "@/components/home/OfertaCard";
+import { OFERTAS } from "@/lib/ofertas";
+import { OfertasRail } from "@/components/home/OfertasRail";
 
 export function Ofertas({ beers }: { beers: Beer[] }) {
-  const featured = beers.slice(0, 5);
+  const featured = OFERTAS.map((oferta) => {
+    const beer = beers.find((b) => b.id === oferta.beerId);
+    return beer ? { beer, oferta } : null;
+  }).filter((entry) => entry !== null);
 
   return (
     <section id="ofertas" className="mx-auto max-w-6xl px-6 py-20">
@@ -17,11 +21,7 @@ export function Ofertas({ beers }: { beers: Beer[] }) {
           No hay cervezas disponibles en este momento.
         </p>
       ) : (
-        <div className="mt-10 flex gap-6 overflow-x-auto pb-4">
-          {featured.map((beer) => (
-            <OfertaCard key={beer.id} beer={beer} />
-          ))}
-        </div>
+        <OfertasRail items={featured} />
       )}
     </section>
   );

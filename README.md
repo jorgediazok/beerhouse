@@ -4,6 +4,19 @@ Beer delivery e-commerce — catalog, cart, checkout and auth, built on Next.js
 (App Router) with Contentful as the headless CMS for products and MongoDB for
 users.
 
+**Live:** https://beerhouse-eta.vercel.app
+
+## Stack
+
+- Next.js (App Router) + TypeScript
+- Tailwind CSS v4
+- Contentful (product catalog)
+- MongoDB + Mongoose (users)
+- Auth.js (NextAuth v5) — Credentials provider, httpOnly session cookie
+- Zustand — cart state, persisted to localStorage
+- Zod — form validation
+- sonner — toasts
+
 ## Setup
 
 Install dependencies:
@@ -39,13 +52,27 @@ Then open http://localhost:3000. Note: the Home and Tienda pages require
 valid Contentful credentials to render (they fetch the beer catalog
 server-side); Login, Cart, Checkout and the 404 page work without them.
 
-## Stack
+## Scripts
 
-- Next.js (App Router) + TypeScript
-- Tailwind CSS v4
-- Contentful (product catalog)
-- MongoDB + Mongoose (users)
-- Auth.js (NextAuth v5) — Credentials provider, httpOnly session cookie
-- Zustand — cart state, persisted to localStorage
-- Zod — form validation
-- sonner — toasts
+- `npm run dev` — start the dev server
+- `npm run build` — production build
+- `npm start` — run a production build
+- `npm run lint` — lint with ESLint
+
+## Project structure
+
+```
+src/
+  app/          routes (App Router) — home, tienda, cart, checkout, login, api/auth
+  components/   UI, grouped by feature (cart, home, layout, shop, providers, ui)
+  lib/          Contentful/Mongo clients, auth config, shared utilities
+  models/       Mongoose models
+  store/        Zustand stores
+  types/        shared TypeScript types
+```
+
+## Deployment
+
+Deployed on Vercel, connected to this repo's `master` branch — every push to
+`master` auto-deploys. Environment variables are set in the Vercel project
+dashboard (not read from `.env.local` in production).
