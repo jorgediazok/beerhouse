@@ -1,3 +1,0 @@
-Este archivo lo usamos para anotaciones que tengamos que hacer:
-
-1. Ver la librería glide.js para lo que es carrousels
