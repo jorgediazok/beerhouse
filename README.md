@@ -6,6 +6,15 @@ users.
 
 **Live:** https://beerhouse-eta.vercel.app
 
+## Features
+
+- Catalog with category filtering (color/style — Rubias, Rojas y Ámbar,
+  Negras, IPA, Trigo, Especiales) and pagination
+- Featured offers carousel on the home page (discounted price, badge)
+- Product page: related products by category, WhatsApp/native share,
+  copy link, live subtotal, back navigation
+- Cart, checkout and Credentials-based auth (Auth.js)
+
 ## Stack
 
 - Next.js (App Router) + TypeScript
@@ -14,6 +23,7 @@ users.
 - MongoDB + Mongoose (users)
 - Auth.js (NextAuth v5) — Credentials provider, httpOnly session cookie
 - Zustand — cart state, persisted to localStorage
+- Embla Carousel — offers and related-products rails
 - Zod — form validation
 - sonner — toasts
 
