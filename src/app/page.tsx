@@ -6,6 +6,8 @@ import { About } from "@/components/home/About";
 import { Testimonials } from "@/components/home/Testimonials";
 import { Contacto } from "@/components/home/Contacto";
 
+export const revalidate = 3600;
+
 export default async function Home() {
   const beers = await getAllBeers();
 
