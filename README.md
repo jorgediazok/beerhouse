@@ -1,57 +1,51 @@
 # Beer House
 
-Web application for a client of beer delivery
+Beer delivery e-commerce — catalog, cart, checkout and auth, built on Next.js
+(App Router) with Contentful as the headless CMS for products and MongoDB for
+users.
 
-## Installation
+## Setup
 
-First install all dependencies for frontend and backend with:
+Install dependencies:
 
 ```
 npm install
 ```
 
-Then, in the root directory create a **.env** file with the following data:
+Create a `.env.local` file in the project root with:
 
 ```
-PORT=5000
-
-DB_CONNECTION=
+MONGODB_URI=
+AUTH_SECRET=
+CONTENTFUL_SPACE_ID=
+CONTENTFUL_ACCESS_TOKEN=
 ```
 
-Create a MongoDB database, and add your connection string to the DB variable in the **.env** file. For example:
+- `MONGODB_URI`: connection string to a MongoDB database (used for user
+  accounts), e.g. `mongodb+srv://user:<password>@cluster.mongodb.net/beerhouse`
+- `AUTH_SECRET`: random secret used to sign session cookies. Generate one with
+  `npx auth secret` or `openssl rand -base64 32`
+- `CONTENTFUL_SPACE_ID` / `CONTENTFUL_ACCESS_TOKEN`: from a Contentful space
+  with a `beerHouseProject` content type (fields: `name`, `price`,
+  `description`, `descriptionExtended`, `image`)
+
+Run the dev server:
 
 ```
-DB_CONNECTION=mongodb+srv://yourusername:<password>@cluster1.2h1zk.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+npm run dev
 ```
 
-In the root directory, type and execute to start the **backend**:
+Then open http://localhost:3000. Note: the Home and Tienda pages require
+valid Contentful credentials to render (they fetch the beer catalog
+server-side); Login, Cart, Checkout and the 404 page work without them.
 
-```
-npm start
-```
+## Stack
 
-In the client directory, type and execute to start the **frontend**:
-
-```
-npm start
-```
-
-## Used technology
-
-### Frontend
-
-- React
-- Redux
-- Sass
-
-### Backend
-
-- Node
-- Express
-- JSON Web Token
-- CORS
-
-## Demo
-
-If you want to see the demo of this proyect deployed, you can visit:
-https://beerhouse-ba.herokuapp.com/
+- Next.js (App Router) + TypeScript
+- Tailwind CSS v4
+- Contentful (product catalog)
+- MongoDB + Mongoose (users)
+- Auth.js (NextAuth v5) — Credentials provider, httpOnly session cookie
+- Zustand — cart state, persisted to localStorage
+- Zod — form validation
+- sonner — toasts
