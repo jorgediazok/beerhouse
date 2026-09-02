@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Beer } from "@/types/beer";
 import type { OfertaOverride } from "@/lib/ofertas";
+import { ProductImage } from "@/components/ui/ProductImage";
 
 const priceFormatter = new Intl.NumberFormat("es-CL", {
   maximumFractionDigits: 0,
@@ -27,10 +27,11 @@ export function OfertaCard({
         <span className="absolute top-2 left-2 z-10 rounded-md bg-orange px-2 py-0.5 font-mono text-[11px] font-bold text-white">
           -{oferta.discountPercent}%
         </span>
-        <Image
+        <ProductImage
           src={oferta.cutoutSrc}
           alt={beer.name}
           fill
+          sizes="224px"
           className="object-contain p-4 transition group-hover:scale-105"
         />
       </div>

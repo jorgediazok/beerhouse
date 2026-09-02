@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Beer } from "@/types/beer";
+import { ProductImage } from "@/components/ui/ProductImage";
 
 export function ProductCard({ beer }: { beer: Beer }) {
   return (
@@ -10,10 +10,11 @@ export function ProductCard({ beer }: { beer: Beer }) {
     >
       <div className="relative h-48 w-full bg-cream">
         {beer.imageUrl && (
-          <Image
+          <ProductImage
             src={beer.imageUrl}
             alt={beer.name}
             fill
+            sizes="(min-width: 1024px) 258px, (min-width: 640px) 50vw, 100vw"
             className="object-contain p-6 transition group-hover:scale-105"
           />
         )}

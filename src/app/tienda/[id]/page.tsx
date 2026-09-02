@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getBeerById } from "@/lib/contentful";
 import { OFERTAS } from "@/lib/ofertas";
 import { AddToCartControls } from "@/components/shop/AddToCartControls";
+import { ProductImage } from "@/components/ui/ProductImage";
 
 const priceFormatter = new Intl.NumberFormat("es-CL", {
   maximumFractionDigits: 0,
@@ -56,16 +56,17 @@ export default async function TiendaDetailsPage({
       </p>
 
       <div className="mt-6 grid gap-10 lg:grid-cols-2 lg:items-center">
-        <div className="relative h-80 w-full rounded-xl border border-dark/8 bg-cream lg:h-112">
+        <div className="relative h-80 w-full overflow-hidden rounded-xl border border-dark/8 bg-cream lg:h-112">
           {oferta && (
             <span className="absolute top-3 left-3 z-10 rounded-md bg-orange px-2.5 py-1 font-mono text-xs font-bold text-white">
               -{oferta.discountPercent}%
             </span>
           )}
-          <Image
+          <ProductImage
             src={oferta ? oferta.cutoutSrc : beer.imageUrl}
             alt={beer.name}
             fill
+            sizes="(min-width: 1024px) 468px, 100vw"
             className="object-contain p-10"
           />
         </div>
