@@ -34,8 +34,13 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 bg-dark text-cream shadow-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-bold tracking-wide text-orange" onClick={closeMenu}>
-          BEER HOUSE
+        <Link href="/" className="flex items-center gap-2" onClick={closeMenu}>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-gold to-orange text-dark">
+            <Beer size={18} strokeWidth={2.25} />
+          </span>
+          <span className="bg-linear-to-br from-gold via-orange to-[#e7691a] bg-clip-text text-lg font-bold tracking-wide text-transparent">
+            BEER HOUSE
+          </span>
         </Link>
 
         <button

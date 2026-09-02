@@ -15,6 +15,10 @@
   --font-sans: var(--font-rubik);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--color-cream);
   color: var(--color-dark);
