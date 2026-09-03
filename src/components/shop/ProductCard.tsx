@@ -4,13 +4,22 @@ import { formatPrice } from "@/lib/format";
 import { productImageSrc } from "@/lib/images";
 import { ProductImage } from "@/components/ui/ProductImage";
 
-export function ProductCard({ beer }: { beer: Beer }) {
+export function ProductCard({ beer, stock }: { beer: Beer; stock?: number }) {
+  const outOfStock = stock === 0;
+
   return (
     <Link
       href={`/tienda/${beer.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-lg"
+      className={`group flex h-full flex-col overflow-hidden rounded-xl bg-white shadow-sm transition hover:shadow-lg ${
+        outOfStock ? "opacity-70" : ""
+      }`}
     >
       <div className="relative h-48 w-full bg-cream">
+        {outOfStock && (
+          <span className="absolute top-2 left-2 z-10 rounded-md bg-dark/80 px-2 py-1 text-xs font-bold text-cream">
+            Sin stock
+          </span>
+        )}
         <ProductImage
           src={productImageSrc(beer.id)}
           alt={beer.name}

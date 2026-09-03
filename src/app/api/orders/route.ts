@@ -7,6 +7,7 @@ import { getShippingCost } from "@/lib/shipping";
 import { getBeerById } from "@/lib/contentful";
 import { sendEmail } from "@/lib/email";
 import { formatPrice } from "@/lib/format";
+import { decrementStock, incrementStock } from "@/lib/stock";
 
 const orderSchema = z.object({
   items: z
@@ -53,6 +54,24 @@ export async function POST(request: Request) {
       );
     }
     resolvedItems.push({ beerId: beer.id, name: beer.name, price: beer.price, qty: item.qty });
+  }
+
+  // Reserve stock for every item before creating the order. If any item runs
+  // out partway through, roll back what already succeeded rather than leaving
+  // stock decremented for an order that was never placed.
+  const reserved: { beerId: string; qty: number }[] = [];
+  for (const item of resolvedItems) {
+    const ok = await decrementStock(item.beerId, item.qty);
+    if (!ok) {
+      for (const entry of reserved) {
+        await incrementStock(entry.beerId, entry.qty);
+      }
+      return NextResponse.json(
+        { error: `No queda stock suficiente de "${item.name}"` },
+        { status: 400 }
+      );
+    }
+    reserved.push({ beerId: item.beerId, qty: item.qty });
   }
 
   const subtotal = resolvedItems.reduce((sum, item) => sum + item.price * item.qty, 0);

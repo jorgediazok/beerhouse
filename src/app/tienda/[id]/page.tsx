@@ -8,6 +8,7 @@ import { getCategoryForBeer } from "@/lib/categories";
 import { formatPrice } from "@/lib/format";
 import { productImageSrc } from "@/lib/images";
 import { SITE_URL } from "@/lib/site";
+import { getStock } from "@/lib/stock";
 import { AddToCartControls } from "@/components/shop/AddToCartControls";
 import { RelatedProducts } from "@/components/shop/RelatedProducts";
 import { ShareProduct } from "@/components/shop/ShareProduct";
@@ -51,6 +52,7 @@ export default async function TiendaDetailsPage({
     : null;
   const category = getCategoryForBeer(beer.id);
   const beers = await getAllBeers();
+  const stock = await getStock(beer.id);
 
   return (
     <div className="py-16">
@@ -106,7 +108,7 @@ export default async function TiendaDetailsPage({
             </div>
             <p className="mt-4 text-dark/70">{beer.descriptionExtended}</p>
             <div className="mt-8">
-              <AddToCartControls beer={beer} />
+              <AddToCartControls beer={beer} stock={stock} />
             </div>
 
             <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 border-t border-dark/8 pt-6 text-sm text-dark/60">
