@@ -23,8 +23,11 @@ jobs:
 
       - run: npm run lint
 
-      - run: npx tsc --noEmit
-
       - run: npm run test
 
+      # `next build` runs its own full TypeScript check as part of the build
+      # (its output already includes a "Running TypeScript" step) — a
+      # standalone `tsc --noEmit` here would fail on a clean checkout, since
+      # Next's PageProps/LayoutProps types only exist under .next/types
+      # after dev/build has run at least once.
       - run: npm run build
