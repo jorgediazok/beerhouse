@@ -27,7 +27,7 @@ export default async function PedidosPage() {
   const orders = await Order.find({ userId: session.user.id }).sort({ createdAt: -1 }).lean();
 
   return (
-    <div className="mx-auto min-h-[75vh] max-w-4xl px-6 py-16">
+    <div className="mx-auto w-full min-h-[75vh] max-w-6xl px-6 py-16">
       <h1 className="text-3xl font-bold">Mis Pedidos</h1>
 
       {orders.length === 0 ? (
@@ -42,12 +42,15 @@ export default async function PedidosPage() {
           </Link>
         </div>
       ) : (
-        <div className="mt-10 flex flex-col gap-7">
+        <div className="mt-10 flex flex-wrap justify-center gap-7">
           {orders.map((order) => {
             const { status, label } = getOrderStatus(order.createdAt);
 
             return (
-              <div key={order._id.toString()} className="rounded-2xl bg-white p-7 shadow-sm sm:p-10">
+              <div
+                key={order._id.toString()}
+                className="w-full rounded-2xl bg-white p-7 shadow-sm sm:p-10 lg:w-[calc(50%-0.875rem)]"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-dark/10 pb-5">
                   <div>
                     <p className="text-lg font-bold text-dark">
