@@ -5,6 +5,8 @@ import { connectDB } from "@/lib/mongodb";
 import { Order, type OrderItem } from "@/models/Order";
 import { getShippingCost } from "@/lib/shipping";
 import { getBeerById } from "@/lib/contentful";
+import { sendEmail } from "@/lib/email";
+import { formatPrice } from "@/lib/format";
 
 const orderSchema = z.object({
   items: z
@@ -66,6 +68,20 @@ export async function POST(request: Request) {
     shippingCost,
     total,
   });
+
+  const orderNumber = order._id.toString().slice(-8).toUpperCase();
+
+  if (session.user.email) {
+    const itemLines = resolvedItems
+      .map((item) => `- ${item.name} x${item.qty} — ${formatPrice(item.price * item.qty)}`)
+      .join("\n");
+
+    await sendEmail({
+      to: session.user.email,
+      subject: `Confirmamos tu pedido #${orderNumber} — Beer House`,
+      text: `¡Gracias por tu compra!\n\nPedido #${orderNumber}\n\n${itemLines}\n\nSubtotal: ${formatPrice(subtotal)}\nEnvío: ${shippingCost === 0 ? "Gratis" : formatPrice(shippingCost)}\nTotal: ${formatPrice(total)}\n\nEnvío a: ${shipping.address} · ${shipping.time}\n\n¡Gracias por elegir Beer House!`,
+    });
+  }
 
   return NextResponse.json({ orderId: order._id.toString(), total }, { status: 201 });
 }

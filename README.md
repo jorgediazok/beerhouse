@@ -22,10 +22,18 @@ users and orders.
   form (personal info, shipping, payment) validated with one combined Zod
   schema instead of a multi-step wizard
 - Orders persisted to MongoDB (`/api/orders`) with totals recomputed
-  server-side rather than trusted from the client; the confirmation screen
-  shows a real order number
+  server-side rather than trusted from the client, and every item price
+  resolved against Contentful instead of the price the client sent; the
+  confirmation screen shows a real order number
 - Flat-rate shipping with a free-shipping threshold, applied consistently in
   the cart, checkout, and the saved order
+- "Mis Pedidos" — order history for the signed-in user, read straight from
+  MongoDB
+- Password recovery — a single-use, SHA-256-hashed reset token with a 1-hour
+  expiry, emailed to the account's address; a show/hide toggle on every
+  password field
+- Transactional email via Resend — contact form, order confirmations, and
+  password reset links
 
 ## Stack
 
@@ -40,6 +48,7 @@ users and orders.
 - Zod — form validation
 - sonner — toasts
 - lucide-react — icons
+- Resend — transactional email
 
 ## Setup
 
@@ -56,6 +65,8 @@ MONGODB_URI=
 AUTH_SECRET=
 CONTENTFUL_SPACE_ID=
 CONTENTFUL_ACCESS_TOKEN=
+RESEND_API_KEY=
+CONTACT_EMAIL=
 ```
 
 - `MONGODB_URI`: connection string to a MongoDB database (used for user
@@ -66,6 +77,14 @@ CONTENTFUL_ACCESS_TOKEN=
 - `CONTENTFUL_SPACE_ID` / `CONTENTFUL_ACCESS_TOKEN`: from a Contentful space
   with a `beerHouseProject` content type (fields: `name`, `price`,
   `description`, `descriptionExtended`, `image`)
+- `RESEND_API_KEY`: API key from [Resend](https://resend.com), used to send
+  contact messages, order confirmations, and password reset emails. Without
+  it, those flows still work but silently skip the email step (logged
+  server-side) — sign-up, login, cart, and checkout don't depend on it.
+  Emails send from the shared `onboarding@resend.dev` sender, which doesn't
+  require a verified domain but won't deliver to obviously fake addresses
+  (e.g. `@example.com`)
+- `CONTACT_EMAIL`: the address that receives messages from the Contacto form
 
 Run the dev server:
 
@@ -88,14 +107,17 @@ server-side); Login, Cart, Checkout and the 404 page work without them.
 
 ```
 src/
-  app/          routes (App Router) — home, tienda, cart, checkout, login, api/auth, api/orders
+  app/          routes (App Router) — home, tienda, cart, checkout, login,
+                pedidos, forgot-password, reset-password, api/auth,
+                api/orders, api/contact
   components/   UI, grouped by feature (cart, home, layout, shop, providers, ui)
-  lib/          Contentful/Mongo clients, auth config, shipping rules, shared utilities
+  lib/          Contentful/Mongo clients, auth config, shipping rules, email
+                (Resend), rate limiting, shared utilities
   models/       Mongoose models (User, Order)
   store/        Zustand stores
   types/        shared TypeScript types
   proxy.ts      route protection (Next.js 16's replacement for middleware.ts),
-                gates /checkout behind a valid session
+                gates /checkout and /pedidos behind a valid session
 ```
 
 ## Deployment

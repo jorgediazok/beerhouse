@@ -12,7 +12,6 @@ export function ForgotPasswordForm() {
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const [devResetUrl, setDevResetUrl] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +30,9 @@ export function ForgotPasswordForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      const data: { devResetUrl?: string } = await response.json();
-      setDevResetUrl(data.devResetUrl ?? null);
+      if (!response.ok) {
+        throw new Error();
+      }
       setSent(true);
     } catch {
       toast.error("Algo salió mal. Probá de nuevo.");
@@ -51,18 +51,6 @@ export function ForgotPasswordForm() {
               Si existe una cuenta con ese email, te enviamos instrucciones para
               restablecer tu contraseña.
             </p>
-            {devResetUrl && (
-              <div className="mt-5 rounded-lg border border-dashed border-orange/40 bg-orange/5 p-4 text-sm">
-                <p className="font-semibold text-dark">Modo desarrollo</p>
-                <p className="mt-1 text-dark/60">
-                  Todavía no conectamos un servicio de email real, así que por
-                  ahora te dejamos el link acá:
-                </p>
-                <Link href={devResetUrl} className="mt-2 block truncate text-orange underline">
-                  {devResetUrl}
-                </Link>
-              </div>
-            )}
             <Link
               href="/login"
               className="mt-6 inline-block text-sm text-dark/55 underline hover:text-orange"

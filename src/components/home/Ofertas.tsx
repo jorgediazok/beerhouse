@@ -13,9 +13,9 @@ export function Ofertas({ beers }: { beers: Beer[] }) {
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="text-center text-3xl font-bold">Cervezas En Oferta</h2>
         <p className="mx-auto mt-3 max-w-2xl text-center text-dark/60">
-          Importadas desde los países con más tradición cervecera y bajo
-          estrictos estándares de calidad. No te pierdas las mejores ofertas
-          de la temporada.
+          Seleccionadas entre nuestro catálogo de cervezas importadas y
+          artesanales, bajo estrictos estándares de calidad. No te pierdas las
+          mejores ofertas de la temporada.
         </p>
 
         {featured.length === 0 ? (
