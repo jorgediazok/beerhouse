@@ -4,18 +4,25 @@ export function Pagination({
   currentPage,
   totalPages,
   categoria,
+  query,
 }: {
   currentPage: number;
   totalPages: number;
   categoria?: string;
+  query?: string;
 }) {
   if (totalPages <= 1) {
     return null;
   }
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  const hrefFor = (page: number) =>
-    categoria ? `/tienda?page=${page}&categoria=${categoria}` : `/tienda?page=${page}`;
+  const hrefFor = (page: number) => {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    if (categoria) params.set("categoria", categoria);
+    if (query) params.set("q", query);
+    return `/tienda?${params.toString()}`;
+  };
 
   return (
     <nav aria-label="Paginación de resultados" className="mt-10 flex items-center justify-center gap-2">
