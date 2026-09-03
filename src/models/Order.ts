@@ -24,6 +24,7 @@ export type OrderDocument = {
   total: number;
   shipping: ShippingInfo;
   status: "confirmed";
+  paymentId: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -59,6 +60,7 @@ const orderSchema = new Schema<OrderDocument>(
     total: { type: Number, required: true },
     shipping: { type: shippingSchema, required: true },
     status: { type: String, enum: ["confirmed"], default: "confirmed" },
+    paymentId: { type: String, required: true },
   },
   { timestamps: true }
 );

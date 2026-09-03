@@ -1,26 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Info } from "lucide-react";
+import { CardPayment, initMercadoPago } from "@mercadopago/sdk-react";
 import { useCartStore, selectTotalPrice } from "@/store/cart-store";
 import { formatPrice } from "@/lib/format";
 import { getShippingCost } from "@/lib/shipping";
 import { productImageSrc } from "@/lib/images";
 import { ProductImage } from "@/components/ui/ProductImage";
 
-const checkoutSchema = z.object({
+const shippingSchema = z.object({
   name: z.string().min(2, "Ingresá tu nombre"),
   phone: z.string().min(6, "Teléfono inválido"),
   document: z.string().min(6, "Documento inválido"),
   address: z.string().min(4, "Ingresá tu dirección"),
   zipCode: z.string().min(3, "Código postal inválido"),
   time: z.string().min(1, "Elegí un horario de entrega"),
-  creditCardNumber: z.string().min(13, "Número de tarjeta inválido").max(19),
-  date: z.string().min(1, "Fecha de vencimiento requerida"),
-  code: z.string().min(3, "Código inválido").max(4),
 });
 
 const initialForm = {
@@ -30,15 +29,14 @@ const initialForm = {
   address: "",
   zipCode: "",
   time: "",
-  creditCardNumber: "",
-  date: "",
-  code: "",
 };
 
+type CardPaymentSubmit = NonNullable<React.ComponentProps<typeof CardPayment>["onSubmit"]>;
+
 export function CheckoutView() {
+  const { data: session } = useSession();
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
   const [order, setOrder] = useState<{ id: string; total: number } | null>(null);
   const items = useCartStore((state) => state.items);
   const totalPrice = useCartStore(selectTotalPrice);
@@ -46,13 +44,25 @@ export function CheckoutView() {
   const shippingCost = getShippingCost(totalPrice);
   const total = totalPrice + shippingCost;
 
+  useEffect(() => {
+    initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!, { locale: "es-AR" });
+  }, []);
+
+  const email = session?.user?.email;
+  // The Brick re-initializes (visibly flickers) whenever this object gets a
+  // new reference, so it must stay stable across the re-renders every
+  // keystroke in the shipping fields triggers — only rebuild it when the
+  // values that actually feed the Brick change.
+  const cardPaymentInitialization = useMemo(
+    () => ({ amount: total, payer: email ? { email } : undefined }),
+    [total, email]
+  );
+
   const updateForm = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const result = checkoutSchema.safeParse(form);
+  const handlePaymentSubmit: CardPaymentSubmit = async ({ token, issuer_id, payment_method_id, installments, payer }) => {
+    const result = shippingSchema.safeParse(form);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       for (const issue of result.error.issues) {
@@ -62,13 +72,12 @@ export function CheckoutView() {
       document
         .querySelector(`[name="${String(result.error.issues[0].path[0])}"]`)
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
+      throw new Error("Completá tus datos de envío antes de pagar");
     }
     setErrors({});
 
-    setSubmitting(true);
     try {
-      const response = await fetch("/api/orders", {
+      const response = await fetch("/api/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -76,29 +85,27 @@ export function CheckoutView() {
             beerId: entry.item.id,
             qty: entry.qty,
           })),
-          shipping: {
-            name: form.name,
-            phone: form.phone,
-            document: form.document,
-            address: form.address,
-            zipCode: form.zipCode,
-            time: form.time,
+          shipping: result.data,
+          card: {
+            token,
+            issuer_id,
+            payment_method_id,
+            installments,
+            payer: { email: payer.email ?? "", identification: payer.identification },
           },
         }),
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error || "No se pudo confirmar el pedido");
+        throw new Error(data?.error || "No pudimos procesar el pago");
       }
 
-      const data: { orderId: string; total: number } = await response.json();
       clearCart();
       setOrder({ id: data.orderId, total: data.total });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No pudimos confirmar tu pedido. Probá de nuevo.");
-    } finally {
-      setSubmitting(false);
+      throw err;
     }
   };
 
@@ -141,7 +148,7 @@ export function CheckoutView() {
     <div className="mx-auto min-h-[75vh] max-w-7xl px-6 py-16 lg:px-10">
       <h1 className="text-3xl font-bold">Confirmar Compra</h1>
 
-      <form onSubmit={handleSubmit} noValidate className="mt-10 grid gap-10 lg:grid-cols-[1fr_23rem] lg:gap-16">
+      <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_23rem] lg:gap-16">
         <div className="rounded-2xl bg-white p-8 shadow-sm sm:p-10">
           <Section title="Datos personales">
             <Field label="Nombre" name="name" value={form.name} onChange={updateForm} error={errors.name} />
@@ -162,25 +169,42 @@ export function CheckoutView() {
             />
           </Section>
 
-          <Section title="Pago">
-            <Field
-              label="Número de Tarjeta"
-              name="creditCardNumber"
-              value={form.creditCardNumber}
-              onChange={updateForm}
-              error={errors.creditCardNumber}
-            />
-            <Field label="Fecha de Vencimiento" name="date" type="date" value={form.date} onChange={updateForm} error={errors.date} />
-            <Field label="Código (CVV)" name="code" value={form.code} onChange={updateForm} error={errors.code} />
-          </Section>
+          <div className="border-b border-dashed border-dark/10 py-6 first:pt-0 last:border-b-0 last:pb-0">
+            <p className="mb-4 text-xs font-bold tracking-wide text-orange uppercase">Pago</p>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-2 w-full rounded-full bg-dark px-8 py-3.5 font-semibold text-cream transition hover:bg-orange hover:text-dark disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {submitting ? "Confirmando..." : `Pagar ${formatPrice(total)}`}
-          </button>
+            <div className="mb-5 flex gap-3 rounded-xl border border-orange/20 bg-orange/5 p-4 text-sm">
+              <Info className="mt-0.5 shrink-0 text-orange" size={18} aria-hidden="true" />
+              <div className="text-dark/70">
+                <p className="font-semibold text-dark">Este es un checkout de demostración</p>
+                <p className="mt-1">
+                  Los pagos corren en modo de prueba de Mercado Pago — no se realiza ningún cobro
+                  real. Usá estos datos para completar la compra:
+                </p>
+                <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono text-xs text-dark/80">
+                  <dt className="text-dark/50">Tarjeta</dt>
+                  <dd>4509 9535 6623 3704</dd>
+                  <dt className="text-dark/50">Vencimiento</dt>
+                  <dd>11/30</dd>
+                  <dt className="text-dark/50">CVV</dt>
+                  <dd>123</dd>
+                  <dt className="text-dark/50">Titular</dt>
+                  <dd>APRO</dd>
+                  <dt className="text-dark/50">Documento</dt>
+                  <dd>12345678</dd>
+                </dl>
+              </div>
+            </div>
+
+            <CardPayment
+              initialization={cardPaymentInitialization}
+              onSubmit={handlePaymentSubmit}
+              onError={(error) => {
+                console.error(error);
+                toast.error("No pudimos cargar el formulario de pago. Recargá la página.");
+              }}
+              locale="es-AR"
+            />
+          </div>
         </div>
 
         <div className="h-fit rounded-2xl bg-dark p-7 text-cream">
@@ -222,7 +246,7 @@ export function CheckoutView() {
             </div>
           </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -8,8 +9,9 @@ import { getBeerById } from "@/lib/contentful";
 import { sendEmail } from "@/lib/email";
 import { formatPrice } from "@/lib/format";
 import { decrementStock, incrementStock } from "@/lib/stock";
+import { mpPayment, paymentRejectionMessage } from "@/lib/mercadopago";
 
-const orderSchema = z.object({
+const paymentSchema = z.object({
   items: z
     .array(
       z.object({
@@ -26,6 +28,16 @@ const orderSchema = z.object({
     zipCode: z.string().min(3),
     time: z.string().min(1),
   }),
+  card: z.object({
+    token: z.string().min(1),
+    issuer_id: z.string().min(1),
+    payment_method_id: z.string().min(1),
+    installments: z.number().int().positive(),
+    payer: z.object({
+      email: z.string().email(),
+      identification: z.object({ type: z.string(), number: z.string() }).optional(),
+    }),
+  }),
 });
 
 export async function POST(request: Request) {
@@ -35,15 +47,15 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const parsed = orderSchema.safeParse(body);
+  const parsed = paymentSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
-  const { items, shipping } = parsed.data;
+  const { items, shipping, card } = parsed.data;
 
   // Never trust name/price from the client — resolve every item against
-  // Contentful so an order always reflects the real, current catalog data.
+  // Contentful so a charge always reflects the real, current catalog data.
   const resolvedItems: OrderItem[] = [];
   for (const item of items) {
     const beer = await getBeerById(item.beerId);
@@ -56,9 +68,8 @@ export async function POST(request: Request) {
     resolvedItems.push({ beerId: beer.id, name: beer.name, price: beer.price, qty: item.qty });
   }
 
-  // Reserve stock for every item before creating the order. If any item runs
-  // out partway through, roll back what already succeeded rather than leaving
-  // stock decremented for an order that was never placed.
+  // Reserve stock for every item before charging the card. If any item runs
+  // out partway through, roll back what already succeeded.
   const reserved: { beerId: string; qty: number }[] = [];
   for (const item of resolvedItems) {
     const ok = await decrementStock(item.beerId, item.qty);
@@ -78,6 +89,39 @@ export async function POST(request: Request) {
   const shippingCost = getShippingCost(subtotal);
   const total = subtotal + shippingCost;
 
+  let payment;
+  try {
+    payment = await mpPayment.create({
+      body: {
+        transaction_amount: total,
+        token: card.token,
+        installments: card.installments,
+        payment_method_id: card.payment_method_id,
+        issuer_id: Number(card.issuer_id),
+        payer: card.payer,
+        description: "Pedido Beer House",
+        binary_mode: true,
+      },
+      requestOptions: { idempotencyKey: randomUUID() },
+    });
+  } catch (err) {
+    console.error("MercadoPago payment create failed:", err);
+    for (const entry of reserved) {
+      await incrementStock(entry.beerId, entry.qty);
+    }
+    return NextResponse.json(
+      { error: "No pudimos procesar el pago. Probá de nuevo." },
+      { status: 400 }
+    );
+  }
+
+  if (payment.status !== "approved" || !payment.id) {
+    for (const entry of reserved) {
+      await incrementStock(entry.beerId, entry.qty);
+    }
+    return NextResponse.json({ error: paymentRejectionMessage(payment.status_detail) }, { status: 402 });
+  }
+
   await connectDB();
   const order = await Order.create({
     userId: session.user.id,
@@ -86,6 +130,7 @@ export async function POST(request: Request) {
     subtotal,
     shippingCost,
     total,
+    paymentId: String(payment.id),
   });
 
   const orderNumber = order._id.toString().slice(-8).toUpperCase();
