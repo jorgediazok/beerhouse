@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { CheckoutView } from "./CheckoutView";
 
 export const metadata: Metadata = {
@@ -7,6 +9,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default function CheckoutPage() {
+export default async function CheckoutPage() {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/login?callbackUrl=/checkout");
+  }
+
   return <CheckoutView />;
 }

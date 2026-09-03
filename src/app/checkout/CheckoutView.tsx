@@ -3,8 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { z } from "zod";
+import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 import { useCartStore, selectTotalPrice } from "@/store/cart-store";
+import { formatPrice } from "@/lib/format";
+import { getShippingCost } from "@/lib/shipping";
 
 const stepSchemas = [
   z.object({
@@ -40,10 +43,13 @@ export function CheckoutView() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [confirmed, setConfirmed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [order, setOrder] = useState<{ id: string; total: number } | null>(null);
   const items = useCartStore((state) => state.items);
   const totalPrice = useCartStore(selectTotalPrice);
   const clearCart = useCartStore((state) => state.clearCart);
+  const shippingCost = getShippingCost(totalPrice);
+  const total = totalPrice + shippingCost;
 
   const updateForm = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -68,27 +74,77 @@ export function CheckoutView() {
 
   const handleBack = () => setStep((s) => s - 1);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep()) return;
-    clearCart();
-    setConfirmed(true);
+
+    setSubmitting(true);
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((entry) => ({
+            beerId: entry.item.id,
+            name: entry.item.name,
+            price: entry.item.price,
+            qty: entry.qty,
+          })),
+          shipping: {
+            name: form.name,
+            phone: form.phone,
+            document: form.document,
+            address: form.address,
+            zipCode: form.zipCode,
+            time: form.time,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("No se pudo confirmar el pedido");
+      }
+
+      const data: { orderId: string; total: number } = await response.json();
+      clearCart();
+      setOrder({ id: data.orderId, total: data.total });
+    } catch {
+      toast.error("No pudimos confirmar tu pedido. Probá de nuevo.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  if (confirmed) {
+  if (order) {
     return (
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
         <CheckCircle2 className="text-orange" size={56} />
         <h1 className="text-2xl font-bold">Compra Confirmada</h1>
         <p className="text-dark/60">
-          Te enviamos un mail con el detalle de tu orden. ¡Gracias por elegir
-          Beer House!
+          Pedido <b className="text-dark">#{order.id.slice(-8).toUpperCase()}</b> por{" "}
+          {formatPrice(order.total)}. Te enviamos un mail con el detalle. ¡Gracias por
+          elegir Beer House!
         </p>
         <Link
           href="/"
           className="mt-4 rounded-full bg-orange px-8 py-3 font-semibold text-dark transition hover:bg-gold"
         >
           Volver al Inicio
+        </Link>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
+        <h1 className="text-2xl font-bold">Tu carrito está vacío</h1>
+        <p className="text-dark/60">Agregá alguna cerveza antes de pasar por caja.</p>
+        <Link
+          href="/tienda"
+          className="mt-4 rounded-full bg-orange px-8 py-3 font-semibold text-dark transition hover:bg-gold"
+        >
+          Ir a la Tienda
         </Link>
       </div>
     );
@@ -125,9 +181,20 @@ export function CheckoutView() {
                   {entry.item.name} x {entry.qty} unidades 🍺
                 </p>
               ))}
-              <p className="mt-3 text-center">
-                Total a Pagar: <b>$ {totalPrice}</b>
-              </p>
+              <div className="mt-3 flex flex-col gap-1 border-t border-dark/10 pt-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-dark/60">Subtotal</span>
+                  <span>{formatPrice(totalPrice)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-dark/60">Envío</span>
+                  <span>{shippingCost === 0 ? "Gratis" : formatPrice(shippingCost)}</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span>Total a Pagar</span>
+                  <span>{formatPrice(total)}</span>
+                </div>
+              </div>
             </div>
             <Field
               label="Número de Tarjeta"
@@ -162,9 +229,10 @@ export function CheckoutView() {
           ) : (
             <button
               type="submit"
-              className="flex-1 rounded-full bg-orange px-6 py-3 font-semibold text-dark transition hover:bg-gold"
+              disabled={submitting}
+              className="flex-1 rounded-full bg-orange px-6 py-3 font-semibold text-dark transition hover:bg-gold disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Pagar
+              {submitting ? "Confirmando..." : "Pagar"}
             </button>
           )}
         </div>

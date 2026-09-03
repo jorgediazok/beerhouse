@@ -28,12 +28,17 @@ const trustPoints = [
   { icon: ShieldCheck, title: "Pago 100% seguro", desc: "en el checkout" },
 ];
 
-export function LoginForm() {
+export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
   const [form, setForm] = useState(initialState);
   const [isSignup, setIsSignup] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const redirectTo =
+    callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
+      ? callbackUrl
+      : "/tienda";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -90,7 +95,7 @@ export function LoginForm() {
     }
 
     toast.success("Te logueaste correctamente");
-    router.push("/tienda");
+    router.push(redirectTo);
     router.refresh();
   };
 
