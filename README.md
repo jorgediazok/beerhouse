@@ -105,6 +105,18 @@ server-side); Login, Cart, Checkout and the 404 page work without them.
 - `npm run build` — production build
 - `npm start` — run a production build
 - `npm run lint` — lint with ESLint
+- `npm run test` — run the Vitest suite once
+- `npm run test:watch` — run Vitest in watch mode
+
+## Testing
+
+[Vitest](https://vitest.dev) covers `src/lib/` (pure logic, plus DB-touching
+functions with Mongoose mocked) and the API route handlers (`src/app/api/**/
+route.ts`, called directly with a `Request` and mocked at the `lib`
+boundary — no real Mongo/Contentful/Resend calls, no env vars required).
+Tests are colocated as `*.test.ts` next to the file they cover. React
+component/page rendering isn't covered yet — Vitest doesn't support async
+Server Components, which most pages here are.
 
 ## Project structure
 
