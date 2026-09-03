@@ -20,6 +20,7 @@ export function Navbar() {
   const router = useRouter();
   const { data: session } = useSession();
   const totalItems = useCartStore(selectTotalItems);
+  const clearCart = useCartStore((state) => state.clearCart);
   const isHome = pathname === "/";
 
   const closeMenu = () => setMenuOpen(false);
@@ -27,6 +28,7 @@ export function Navbar() {
   const handleLogout = async () => {
     closeMenu();
     await signOut({ redirect: false });
+    clearCart();
     router.push("/login");
     router.refresh();
   };
