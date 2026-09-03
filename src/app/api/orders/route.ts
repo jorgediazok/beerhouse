@@ -2,16 +2,15 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
-import { Order } from "@/models/Order";
+import { Order, type OrderItem } from "@/models/Order";
 import { getShippingCost } from "@/lib/shipping";
+import { getBeerById } from "@/lib/contentful";
 
 const orderSchema = z.object({
   items: z
     .array(
       z.object({
         beerId: z.string().min(1),
-        name: z.string().min(1),
-        price: z.number().positive(),
         qty: z.number().int().positive(),
       })
     )
@@ -39,14 +38,29 @@ export async function POST(request: Request) {
   }
 
   const { items, shipping } = parsed.data;
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  // Never trust name/price from the client — resolve every item against
+  // Contentful so an order always reflects the real, current catalog data.
+  const resolvedItems: OrderItem[] = [];
+  for (const item of items) {
+    const beer = await getBeerById(item.beerId);
+    if (!beer) {
+      return NextResponse.json(
+        { error: "Uno de los productos de tu carrito ya no está disponible" },
+        { status: 400 }
+      );
+    }
+    resolvedItems.push({ beerId: beer.id, name: beer.name, price: beer.price, qty: item.qty });
+  }
+
+  const subtotal = resolvedItems.reduce((sum, item) => sum + item.price * item.qty, 0);
   const shippingCost = getShippingCost(subtotal);
   const total = subtotal + shippingCost;
 
   await connectDB();
   const order = await Order.create({
     userId: session.user.id,
-    items,
+    items: resolvedItems,
     shipping,
     subtotal,
     shippingCost,

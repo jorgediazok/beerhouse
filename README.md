@@ -2,7 +2,7 @@
 
 Beer delivery e-commerce — catalog, cart, checkout and auth, built on Next.js
 (App Router) with Contentful as the headless CMS for products and MongoDB for
-users.
+users and orders.
 
 **Live:** https://beerhouse-eta.vercel.app
 
@@ -13,19 +13,33 @@ users.
 - Featured offers carousel on the home page (discounted price, badge)
 - Product page: related products by category, WhatsApp/native share,
   copy link, live subtotal, back navigation
-- Cart, checkout and Credentials-based auth (Auth.js)
+- Credentials-based auth (Auth.js / NextAuth v5) — email/password signup and
+  login, bcrypt-hashed passwords, JWT session cookie
+- Cart (Zustand, persisted to localStorage) with per-line subtotals, live
+  quantity controls, and a free-shipping progress nudge
+- Checkout gated behind auth — an unauthenticated visit to `/checkout`
+  redirects to `/login` and returns to checkout after signing in; single-page
+  form (personal info, shipping, payment) validated with one combined Zod
+  schema instead of a multi-step wizard
+- Orders persisted to MongoDB (`/api/orders`) with totals recomputed
+  server-side rather than trusted from the client; the confirmation screen
+  shows a real order number
+- Flat-rate shipping with a free-shipping threshold, applied consistently in
+  the cart, checkout, and the saved order
 
 ## Stack
 
 - Next.js (App Router) + TypeScript
 - Tailwind CSS v4
 - Contentful (product catalog)
-- MongoDB + Mongoose (users)
+- MongoDB + Mongoose (users, orders)
 - Auth.js (NextAuth v5) — Credentials provider, httpOnly session cookie
+- bcryptjs — password hashing
 - Zustand — cart state, persisted to localStorage
 - Embla Carousel — offers and related-products rails
 - Zod — form validation
 - sonner — toasts
+- lucide-react — icons
 
 ## Setup
 
@@ -45,7 +59,8 @@ CONTENTFUL_ACCESS_TOKEN=
 ```
 
 - `MONGODB_URI`: connection string to a MongoDB database (used for user
-  accounts), e.g. `mongodb+srv://user:<password>@cluster.mongodb.net/beerhouse`
+  accounts and orders), e.g.
+  `mongodb+srv://user:<password>@cluster.mongodb.net/beerhouse`
 - `AUTH_SECRET`: random secret used to sign session cookies. Generate one with
   `npx auth secret` or `openssl rand -base64 32`
 - `CONTENTFUL_SPACE_ID` / `CONTENTFUL_ACCESS_TOKEN`: from a Contentful space
@@ -73,12 +88,14 @@ server-side); Login, Cart, Checkout and the 404 page work without them.
 
 ```
 src/
-  app/          routes (App Router) — home, tienda, cart, checkout, login, api/auth
+  app/          routes (App Router) — home, tienda, cart, checkout, login, api/auth, api/orders
   components/   UI, grouped by feature (cart, home, layout, shop, providers, ui)
-  lib/          Contentful/Mongo clients, auth config, shared utilities
-  models/       Mongoose models
+  lib/          Contentful/Mongo clients, auth config, shipping rules, shared utilities
+  models/       Mongoose models (User, Order)
   store/        Zustand stores
   types/        shared TypeScript types
+  proxy.ts      route protection (Next.js 16's replacement for middleware.ts),
+                gates /checkout behind a valid session
 ```
 
 ## Deployment

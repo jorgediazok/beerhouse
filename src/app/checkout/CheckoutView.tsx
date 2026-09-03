@@ -8,24 +8,20 @@ import { CheckCircle2 } from "lucide-react";
 import { useCartStore, selectTotalPrice } from "@/store/cart-store";
 import { formatPrice } from "@/lib/format";
 import { getShippingCost } from "@/lib/shipping";
+import { productImageSrc } from "@/lib/images";
+import { ProductImage } from "@/components/ui/ProductImage";
 
-const stepSchemas = [
-  z.object({
-    name: z.string().min(2, "Ingresá tu nombre"),
-    phone: z.string().min(6, "Teléfono inválido"),
-    document: z.string().min(6, "Documento inválido"),
-  }),
-  z.object({
-    address: z.string().min(4, "Ingresá tu dirección"),
-    zipCode: z.string().min(3, "Código postal inválido"),
-    time: z.string().min(1, "Elegí un horario de entrega"),
-  }),
-  z.object({
-    creditCardNumber: z.string().min(13, "Número de tarjeta inválido").max(19),
-    date: z.string().min(1, "Fecha de vencimiento requerida"),
-    code: z.string().min(3, "Código inválido").max(4),
-  }),
-];
+const checkoutSchema = z.object({
+  name: z.string().min(2, "Ingresá tu nombre"),
+  phone: z.string().min(6, "Teléfono inválido"),
+  document: z.string().min(6, "Documento inválido"),
+  address: z.string().min(4, "Ingresá tu dirección"),
+  zipCode: z.string().min(3, "Código postal inválido"),
+  time: z.string().min(1, "Elegí un horario de entrega"),
+  creditCardNumber: z.string().min(13, "Número de tarjeta inválido").max(19),
+  date: z.string().min(1, "Fecha de vencimiento requerida"),
+  code: z.string().min(3, "Código inválido").max(4),
+});
 
 const initialForm = {
   name: "",
@@ -40,7 +36,6 @@ const initialForm = {
 };
 
 export function CheckoutView() {
-  const [step, setStep] = useState(1);
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -54,29 +49,22 @@ export function CheckoutView() {
   const updateForm = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const validateStep = () => {
-    const result = stepSchemas[step - 1].safeParse(form);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const result = checkoutSchema.safeParse(form);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       for (const issue of result.error.issues) {
         fieldErrors[issue.path[0] as string] = issue.message;
       }
       setErrors(fieldErrors);
-      return false;
+      document
+        .querySelector(`[name="${String(result.error.issues[0].path[0])}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
     }
     setErrors({});
-    return true;
-  };
-
-  const handleNext = () => {
-    if (validateStep()) setStep((s) => s + 1);
-  };
-
-  const handleBack = () => setStep((s) => s - 1);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateStep()) return;
 
     setSubmitting(true);
     try {
@@ -86,8 +74,6 @@ export function CheckoutView() {
         body: JSON.stringify({
           items: items.map((entry) => ({
             beerId: entry.item.id,
-            name: entry.item.name,
-            price: entry.item.price,
             qty: entry.qty,
           })),
           shipping: {
@@ -102,14 +88,15 @@ export function CheckoutView() {
       });
 
       if (!response.ok) {
-        throw new Error("No se pudo confirmar el pedido");
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || "No se pudo confirmar el pedido");
       }
 
       const data: { orderId: string; total: number } = await response.json();
       clearCart();
       setOrder({ id: data.orderId, total: data.total });
-    } catch {
-      toast.error("No pudimos confirmar tu pedido. Probá de nuevo.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No pudimos confirmar tu pedido. Probá de nuevo.");
     } finally {
       setSubmitting(false);
     }
@@ -151,51 +138,31 @@ export function CheckoutView() {
   }
 
   return (
-    <div className="mx-auto max-w-xl px-6 py-16">
-      <h1 className="text-center text-2xl font-bold">Confirmar Compra</h1>
-      <p className="mt-2 text-center text-dark/60">Paso {step} de 3</p>
+    <div className="mx-auto min-h-[75vh] max-w-7xl px-6 py-16 lg:px-10">
+      <h1 className="text-3xl font-bold">Confirmar Compra</h1>
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
-        {step === 1 && (
-          <>
+      <form onSubmit={handleSubmit} noValidate className="mt-10 grid gap-10 lg:grid-cols-[1fr_23rem] lg:gap-16">
+        <div className="rounded-2xl bg-white p-8 shadow-sm sm:p-10">
+          <Section title="Datos personales">
             <Field label="Nombre" name="name" value={form.name} onChange={updateForm} error={errors.name} />
             <Field label="Teléfono" name="phone" value={form.phone} onChange={updateForm} error={errors.phone} />
             <Field label="Documento" name="document" value={form.document} onChange={updateForm} error={errors.document} />
-          </>
-        )}
+          </Section>
 
-        {step === 2 && (
-          <>
+          <Section title="Envío">
             <Field label="Dirección" name="address" value={form.address} onChange={updateForm} error={errors.address} />
             <Field label="Código Postal" name="zipCode" value={form.zipCode} onChange={updateForm} error={errors.zipCode} />
-            <Field label="Horario de Entrega" name="time" value={form.time} onChange={updateForm} error={errors.time} />
-          </>
-        )}
+            <Field
+              label="Horario de Entrega"
+              name="time"
+              value={form.time}
+              onChange={updateForm}
+              error={errors.time}
+              placeholder="Ej: 18:00 - 20:00"
+            />
+          </Section>
 
-        {step === 3 && (
-          <>
-            <div className="rounded-xl bg-white p-4 shadow-sm">
-              <h2 className="text-center font-semibold underline">Tu Compra</h2>
-              {items.map((entry) => (
-                <p key={entry.item.id} className="mt-2 text-center text-sm">
-                  {entry.item.name} x {entry.qty} unidades 🍺
-                </p>
-              ))}
-              <div className="mt-3 flex flex-col gap-1 border-t border-dark/10 pt-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-dark/60">Subtotal</span>
-                  <span>{formatPrice(totalPrice)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-dark/60">Envío</span>
-                  <span>{shippingCost === 0 ? "Gratis" : formatPrice(shippingCost)}</span>
-                </div>
-                <div className="flex justify-between font-bold">
-                  <span>Total a Pagar</span>
-                  <span>{formatPrice(total)}</span>
-                </div>
-              </div>
-            </div>
+          <Section title="Pago">
             <Field
               label="Número de Tarjeta"
               name="creditCardNumber"
@@ -205,38 +172,66 @@ export function CheckoutView() {
             />
             <Field label="Fecha de Vencimiento" name="date" type="date" value={form.date} onChange={updateForm} error={errors.date} />
             <Field label="Código (CVV)" name="code" value={form.code} onChange={updateForm} error={errors.code} />
-          </>
-        )}
+          </Section>
 
-        <div className="mt-4 flex justify-between gap-4">
-          {step > 1 && (
-            <button
-              type="button"
-              onClick={handleBack}
-              className="flex-1 rounded-full border border-dark/20 px-6 py-3 font-semibold transition hover:bg-dark/5"
-            >
-              Volver
-            </button>
-          )}
-          {step < 3 ? (
-            <button
-              type="button"
-              onClick={handleNext}
-              className="flex-1 rounded-full bg-orange px-6 py-3 font-semibold text-dark transition hover:bg-gold"
-            >
-              Continuar
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex-1 rounded-full bg-orange px-6 py-3 font-semibold text-dark transition hover:bg-gold disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting ? "Confirmando..." : "Pagar"}
-            </button>
-          )}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-2 w-full rounded-full bg-dark px-8 py-3.5 font-semibold text-cream transition hover:bg-orange hover:text-dark disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? "Confirmando..." : `Pagar ${formatPrice(total)}`}
+          </button>
+        </div>
+
+        <div className="h-fit rounded-2xl bg-dark p-7 text-cream">
+          <h2 className="text-lg font-semibold">Resumen</h2>
+          <div className="mt-5 flex flex-col gap-3">
+            {items.map((entry) => (
+              <div key={entry.item.id} className="flex items-center gap-3">
+                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-cream/10">
+                  <ProductImage
+                    src={productImageSrc(entry.item.id)}
+                    alt={entry.item.name}
+                    fill
+                    sizes="40px"
+                    className="object-contain p-1.5"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{entry.item.name}</p>
+                  <p className="text-xs text-cream/45">x{entry.qty}</p>
+                </div>
+                <p className="text-sm font-semibold">{formatPrice(entry.item.price * entry.qty)}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 border-t border-cream/15 pt-4">
+            <div className="flex justify-between text-sm text-cream/55">
+              <span>Subtotal</span>
+              <span>{formatPrice(totalPrice)}</span>
+            </div>
+            <div className="mt-2 flex justify-between text-sm text-cream/55">
+              <span>Envío</span>
+              <span>{shippingCost === 0 ? "Gratis" : formatPrice(shippingCost)}</span>
+            </div>
+            <div className="mt-3 flex justify-between border-t border-cream/15 pt-3 text-lg font-bold">
+              <span>Total</span>
+              <span className="bg-linear-to-r from-orange to-gold bg-clip-text text-transparent">
+                {formatPrice(total)}
+              </span>
+            </div>
+          </div>
         </div>
       </form>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-4 border-b border-dashed border-dark/10 py-6 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-3">
+      <p className="col-span-full text-xs font-bold tracking-wide text-orange uppercase">{title}</p>
+      {children}
     </div>
   );
 }
@@ -248,6 +243,7 @@ function Field({
   onChange,
   error,
   type = "text",
+  placeholder,
 }: {
   label: string;
   name: string;
@@ -255,18 +251,26 @@ function Field({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   error?: string;
   type?: string;
+  placeholder?: string;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
+    <label className="flex flex-col gap-1.5 text-sm font-medium text-dark/70">
       {label}
       <input
         name={name}
         type={type}
         value={value}
         onChange={onChange}
-        className="rounded-lg border border-dark/10 bg-white px-4 py-3 outline-none focus:border-orange"
+        placeholder={placeholder}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${name}-error` : undefined}
+        className="rounded-lg border border-dark/10 bg-cream/40 px-4 py-3 text-dark outline-none focus:border-orange aria-invalid:border-red-400"
       />
-      {error && <span className="text-xs text-red-500">{error}</span>}
+      {error && (
+        <span id={`${name}-error`} className="text-xs font-normal text-red-500">
+          {error}
+        </span>
+      )}
     </label>
   );
 }
