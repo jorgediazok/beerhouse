@@ -94,6 +94,17 @@ export function Navbar() {
               Tienda <Beer size={16} aria-hidden="true" />
             </Link>
           </li>
+          {session && (
+            <li>
+              <Link
+                href="/pedidos"
+                onClick={closeMenu}
+                className="text-sm font-medium tracking-wide uppercase hover:text-orange"
+              >
+                Mis Pedidos
+              </Link>
+            </li>
+          )}
           <li>
             {session ? (
               <button
