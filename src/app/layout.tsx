@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Rubik } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers/Providers";
 import { Navbar } from "@/components/layout/Navbar";
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </main>
           <Footer />
           <Toaster richColors position="top-center" />
+          <Analytics />
         </Providers>
       </body>
     </html>
