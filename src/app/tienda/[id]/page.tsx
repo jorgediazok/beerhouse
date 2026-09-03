@@ -9,9 +9,13 @@ import { formatPrice } from "@/lib/format";
 import { productImageSrc } from "@/lib/images";
 import { SITE_URL } from "@/lib/site";
 import { getStock } from "@/lib/stock";
+import { auth } from "@/lib/auth";
+import { getRatingSummary, getReviews } from "@/lib/reviews";
 import { AddToCartControls } from "@/components/shop/AddToCartControls";
 import { RelatedProducts } from "@/components/shop/RelatedProducts";
 import { ShareProduct } from "@/components/shop/ShareProduct";
+import { StarRating } from "@/components/shop/StarRating";
+import { ProductReviews } from "@/components/shop/ProductReviews";
 import { ProductImage } from "@/components/ui/ProductImage";
 import { BackButton } from "@/components/ui/BackButton";
 
@@ -52,7 +56,12 @@ export default async function TiendaDetailsPage({
     : null;
   const category = getCategoryForBeer(beer.id);
   const beers = await getAllBeers();
-  const stock = await getStock(beer.id);
+  const [stock, summary, reviews, session] = await Promise.all([
+    getStock(beer.id),
+    getRatingSummary(beer.id),
+    getReviews(beer.id),
+    auth(),
+  ]);
 
   return (
     <div className="py-16">
@@ -96,6 +105,14 @@ export default async function TiendaDetailsPage({
           </div>
           <div>
             <h1 className="text-3xl font-bold">{beer.name}</h1>
+            <a href="#reseñas" className="mt-2 flex items-center gap-2 w-fit">
+              <StarRating value={summary.average} size={16} />
+              <span className="text-sm text-dark/60">
+                {summary.count > 0
+                  ? `${summary.average.toFixed(1)} (${summary.count})`
+                  : "Sin reseñas"}
+              </span>
+            </a>
             <div className="mt-2 flex items-baseline gap-3">
               <span className="text-xl font-bold text-orange">
                 {formatPrice(beer.price)}
@@ -134,6 +151,17 @@ export default async function TiendaDetailsPage({
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-16">
+        <ProductReviews
+          id="reseñas"
+          beerId={beer.id}
+          summary={summary}
+          reviews={reviews}
+          hasSession={!!session}
+          currentUserId={session?.user?.id ?? null}
+        />
       </div>
 
       <div className="mt-16">

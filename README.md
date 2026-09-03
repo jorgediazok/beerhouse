@@ -34,6 +34,9 @@ users and orders.
   password field
 - Transactional email via Resend — contact form, order confirmations, and
   password reset links
+- Product reviews and star ratings — any signed-in user can rate and review
+  a beer (name, 1-5 stars, comment); one review per user per product, with
+  a pencil-icon toggle to edit your own review in place
 
 ## Stack
 
