@@ -1,4 +1,4 @@
-import { Beer, Truck, Gift, IdCard, type LucideIcon } from "lucide-react";
+import { Beer, Truck, PackageSearch, Star, type LucideIcon } from "lucide-react";
 
 const services: { icon: LucideIcon; title: string; description: string }[] = [
   {
@@ -14,16 +14,16 @@ const services: { icon: LucideIcon; title: string; description: string }[] = [
       "Te llevamos las cervezas que quieras a donde quieras, para que no te falte nunca una birra.",
   },
   {
-    icon: Gift,
-    title: "Regalá Cerveza",
+    icon: PackageSearch,
+    title: "Seguí tu Pedido",
     description:
-      "¿Tenés un cumpleaños y no sabés qué regalar? Consultá nuestros packs especiales de regalos.",
+      "Mirá el estado de tu compra en tiempo real, desde confirmado hasta entregado en tu puerta.",
   },
   {
-    icon: IdCard,
-    title: "Hacete Miembro",
+    icon: Star,
+    title: "Reseñas Reales",
     description:
-      "Asociate al Club Beer House y recibí novedades, descuentos y participá de sorteos.",
+      "Opiniones y calificaciones de otros clientes en cada cerveza, para que elijas con confianza.",
   },
 ];
 
