@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Truck, Globe, ShieldCheck } from "lucide-react";
 import { Bubbles } from "@/components/ui/Bubbles";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -143,21 +145,27 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
             </label>
             <label className="flex flex-col gap-1.5 text-sm font-medium text-dark/70">
               Contraseña
-              <input
+              <PasswordInput
                 name="password"
-                type="password"
                 value={form.password}
                 onChange={handleChange}
                 className="rounded-lg border border-dark/10 bg-cream/40 px-4 py-3 text-dark outline-none focus:border-orange"
               />
               {errors.password && <span className="text-xs font-normal text-red-500">{errors.password}</span>}
             </label>
+            {!isSignup && (
+              <Link
+                href="/forgot-password"
+                className="-mt-2 text-left text-sm text-dark/55 underline hover:text-orange"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            )}
             {isSignup && (
               <label className="flex flex-col gap-1.5 text-sm font-medium text-dark/70">
                 Confirmar contraseña
-                <input
+                <PasswordInput
                   name="confirmPassword"
-                  type="password"
                   value={form.confirmPassword}
                   onChange={handleChange}
                   className="rounded-lg border border-dark/10 bg-cream/40 px-4 py-3 text-dark outline-none focus:border-orange"
