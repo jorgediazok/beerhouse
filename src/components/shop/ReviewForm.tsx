@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Star } from "lucide-react";
@@ -39,6 +39,28 @@ export function ReviewForm({
   const [comment, setComment] = useState(initialReview?.comment ?? "");
   const [errors, setErrors] = useState<Errors>({});
   const [sending, setSending] = useState(false);
+  const starRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const selectRating = (star: number) => {
+    setRating(star);
+    if (errors.rating) setErrors({ ...errors, rating: undefined });
+  };
+
+  // Roving-tabindex + arrow-key navigation per the ARIA radiogroup pattern —
+  // only the checked (or first) star is a tab stop, arrows move selection.
+  const handleStarsKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const current = rating || 1;
+    let next = current;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = current < 5 ? current + 1 : 1;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = current > 1 ? current - 1 : 5;
+    else if (e.key === "Home") next = 1;
+    else if (e.key === "End") next = 5;
+    else return;
+
+    e.preventDefault();
+    selectRating(next);
+    starRefs.current[next - 1]?.focus();
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -119,6 +141,7 @@ export function ReviewForm({
           <div
             className="flex items-center gap-1"
             onMouseLeave={() => setHoverRating(0)}
+            onKeyDown={handleStarsKeyDown}
             role="radiogroup"
             aria-label="Calificación"
             aria-describedby={errors.rating ? "review-rating-error" : undefined}
@@ -126,15 +149,16 @@ export function ReviewForm({
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
+                ref={(el) => {
+                  starRefs.current[star - 1] = el;
+                }}
                 type="button"
                 role="radio"
                 aria-checked={rating === star}
                 aria-label={`${star} estrella${star > 1 ? "s" : ""}`}
+                tabIndex={star === (rating || 1) ? 0 : -1}
                 onMouseEnter={() => setHoverRating(star)}
-                onClick={() => {
-                  setRating(star);
-                  if (errors.rating) setErrors({ ...errors, rating: undefined });
-                }}
+                onClick={() => selectRating(star)}
                 className="p-0.5"
               >
                 <Star

@@ -130,15 +130,15 @@ export default async function TiendaDetailsPage({
 
             <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 border-t border-dark/8 pt-6 text-sm text-dark/60">
               <span className="flex items-center gap-2">
-                <Truck size={18} className="text-orange" />
+                <Truck size={18} className="text-orange" aria-hidden="true" />
                 Envío a domicilio
               </span>
               <span className="flex items-center gap-2">
-                <CreditCard size={18} className="text-orange" />
+                <CreditCard size={18} className="text-orange" aria-hidden="true" />
                 Pago seguro
               </span>
               <span className="flex items-center gap-2">
-                <ShieldCheck size={18} className="text-orange" />
+                <ShieldCheck size={18} className="text-orange" aria-hidden="true" />
                 Compra protegida
               </span>
             </div>
